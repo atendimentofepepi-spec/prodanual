@@ -1,0 +1,235 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cálculo Reverso de Produção Anual (com Restrição de Peso)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2em 0;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2em;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 800px;
+            width: 95%;
+        }
+        h1 {
+            color: #005f73;
+        }
+        .meses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1em;
+            margin-bottom: 1.5em;
+        }
+        .mes-input {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #008cba;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #005f73;
+        }
+        table {
+            width: 100%;
+            margin-top: 1.5em;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        #total {
+            margin-top: 1em;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #005f73;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐟 Cálculo Reverso de Produção Anual 📝</h1>
+        <p>Digite os valores mensais. O peso (KG) na tabela será um número inteiro.</p>
+        
+        <div id="entradas-mensais" class="meses-grid">
+            </div>
+
+        <button onclick="criarTabela()">Gerar Tabela de Produção</button>
+        
+        <table id="tabela-produtos" border="1">
+            </table>
+        
+        <p id="total">Total: </p>
+    </div>
+
+    <script>
+        function shuffle(array) {
+            let currentIndex = array.length;
+            while (currentIndex != 0) {
+                let randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+        }
+
+        /**
+         * **FUNÇÃO ATUALIZADA COM A NOVA RESTRIÇÃO DE PESO**
+         */
+        function gerarProdutos(somatorio) {
+            while (true) {
+                let produtos = [];
+                const multiplicadores = [8, 9, 10, 11, 12, 14];
+                const peixes = ["Mandi", "Traíra", "Piau", "Curvina", "Curimatã", "Piranha", "Piaba"];
+                let totalAcumulado = 0;
+                let pesoDosTresPrimeiros = 0; // **NOVO**: Variável para somar os pesos
+                shuffle(peixes);
+
+                for (let i = 0; i < 3; i++) {
+                    const maxProduto = Math.floor((somatorio - totalAcumulado) / (4 - i) / 8);
+                    if (maxProduto <= 1) {
+                        break; 
+                    }
+                    const produto = Math.floor(Math.random() * (maxProduto / 2)) + 1;
+                    const multiplicador = multiplicadores[Math.floor(Math.random() * multiplicadores.length)];
+                    const valorFinal = produto * multiplicador;
+                    
+                    pesoDosTresPrimeiros += produto; // **NOVO**: Acumula o peso
+                    totalAcumulado += valorFinal;
+                    produtos.push({ produto, multiplicador, peixe: peixes[i], valorFinal });
+                }
+
+                if (produtos.length < 3) {
+                    continue; // Tenta novamente se não conseguiu gerar os 3 primeiros itens
+                }
+
+                const valorRestante = somatorio - totalAcumulado;
+
+                if (valorRestante <= 0) {
+                    continue;
+                }
+
+                let solucaoEncontrada = false;
+                shuffle(multiplicadores);
+                for (const ultimoMultiplicador of multiplicadores) {
+                    if (valorRestante % ultimoMultiplicador === 0) {
+                        const ultimoProduto = valorRestante / ultimoMultiplicador;
+
+                        // **NOVA REGRA**: Verifica se o peso do último item é válido
+                        if (ultimoProduto <= pesoDosTresPrimeiros) {
+                            produtos.push({
+                                produto: ultimoProduto,
+                                multiplicador: ultimoMultiplicador,
+                                valorFinal: valorRestante,
+                                peixe: peixes[4]
+                            });
+                            solucaoEncontrada = true;
+                            break; 
+                        }
+                    }
+                }
+                
+                if (solucaoEncontrada) {
+                    return produtos;
+                }
+            }
+        }
+        
+        function criarInputsDosMeses() {
+            const container = document.getElementById('entradas-mensais');
+            const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            
+            meses.forEach(mes => {
+                const div = document.createElement('div');
+                div.className = 'mes-input';
+                
+                const label = document.createElement('label');
+                label.setAttribute('for', mes.toLowerCase());
+                label.textContent = `${mes}:`;
+                
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.id = mes.toLowerCase();
+                input.className = 'valor-mensal';
+                input.placeholder = "0,00";
+                
+                div.appendChild(label);
+                div.appendChild(input);
+                container.appendChild(div);
+            });
+        }
+
+        function criarTabela() {
+            const inputs = document.querySelectorAll('.valor-mensal');
+            let somaMensal = 0;
+            
+            inputs.forEach(input => {
+                const valor = input.value.replace(',', '.') || '0';
+                somaMensal += parseFloat(valor);
+            });
+
+            const somatorioDecimal = somaMensal / 0.015;
+            const somatorioInteiro = Math.round(somatorioDecimal);
+
+            const formatarMoeda = (num) => "R$ " + num.toFixed(2).replace('.',',');
+
+            if (somatorioInteiro > 100 && somatorioInteiro < 800000) {
+                const produtos = gerarProdutos(somatorioInteiro);
+                let tabela = document.getElementById("tabela-produtos");
+                tabela.innerHTML = "<tr><th>🎣 Unidade(KG) </th><th>🐠 Peixe </th><th>💲 Valor/KG </th><th>🗒️ Total Parcial </th></tr>";
+                
+                let totalDaTabela = 0;
+                produtos.forEach(produto => {
+                    let row = tabela.insertRow();
+                    row.insertCell(0).innerHTML = produto.produto + " kg";
+                    row.insertCell(1).innerHTML = produto.peixe;
+                    row.insertCell(2).innerHTML = formatarMoeda(produto.multiplicador);
+                    row.insertCell(3).innerHTML = formatarMoeda(produto.valorFinal);
+                    totalDaTabela += produto.valorFinal;
+                });
+                
+                document.getElementById("total").innerText = "Total da Produção: " + formatarMoeda(totalDaTabela);
+
+            } else {
+                alert("O valor total calculado (" + formatarMoeda(somatorioInteiro) + ") está fora do intervalo válido (entre R$ 100 e R$ 800.000). Por favor, ajuste os valores mensais.");
+                document.getElementById("tabela-produtos").innerHTML = "";
+                document.getElementById("total").innerText = "Total: ";
+            }
+        }
+        
+        window.onload = criarInputsDosMeses;
+    </script>
+</body>
+</html>
