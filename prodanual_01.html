@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -38,6 +38,16 @@
             flex-direction: column;
             align-items: flex-start;
         }
+        /* Estilo adicionado para o valor no label */
+        .mes-input label {
+            font-size: 0.9em;
+            color: #333;
+        }
+        .mes-input label span {
+            font-weight: bold;
+            color: #005f73;
+            margin-left: 5px;
+        }
         input[type="number"] {
             width: 100%;
             padding: 8px;
@@ -67,6 +77,7 @@
             border: 1px solid #ddd;
             padding: 10px;
             text-align: left;
+            vertical-align: middle;
         }
         th {
             background-color: #f2f2f2;
@@ -76,6 +87,18 @@
             font-size: 1.2em;
             font-weight: bold;
             color: #005f73;
+        }
+        .btn-copiar {
+            background-color: blue;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 8px;
+            padding: 2px 6px;
+        }
+        .btn-copiar:hover {
+            background-color: #f0f0f0;
         }
     </style>
 </head>
@@ -96,6 +119,15 @@
     </div>
 
     <script>
+        function copiarNome(nome) {
+            navigator.clipboard.writeText(nome).then(() => {
+                //alert(`"${nome}" copiado para a área de transferência!`);
+            }).catch(err => {
+                console.error('Erro ao copiar o nome: ', err);
+                //alert('Falha ao copiar o nome.');
+            });
+        }
+
         function shuffle(array) {
             let currentIndex = array.length;
             while (currentIndex != 0) {
@@ -105,34 +137,42 @@
             }
         }
 
-        /**
-         * **FUNÇÃO ATUALIZADA COM A NOVA RESTRIÇÃO DE PESO**
-         */
         function gerarProdutos(somatorio) {
             while (true) {
                 let produtos = [];
-                const multiplicadores = [8, 9, 10, 11, 12, 14];
-                const peixes = ["Mandi", "Traíra", "Piau", "Curvina", "Curimatã", "Piranha", "Piaba"];
+                const multiplicadores = [8, 9, 10, 11, 12, 13, 14];
+                const peixes = ["Piranha", "Piaba", "Traíra", "Piau", "Mandi", "Corvina", "Curimatã"]
+                const peixesOriginais = [...peixes];
+                
                 let totalAcumulado = 0;
-                let pesoDosTresPrimeiros = 0; // **NOVO**: Variável para somar os pesos
+                let pesoDosTresPrimeiros = 0;
                 shuffle(peixes);
 
                 for (let i = 0; i < 3; i++) {
+                    const peixeAtual = peixes[i];
+                    const indiceOriginal = peixesOriginais.indexOf(peixeAtual);
+
+                    if (indiceOriginal >= multiplicadores.length) {
+                        produtos = []; 
+                        break;
+                    }
+                    
+                    const multiplicador = multiplicadores[indiceOriginal];
+                    
                     const maxProduto = Math.floor((somatorio - totalAcumulado) / (4 - i) / 8);
                     if (maxProduto <= 1) {
                         break; 
                     }
                     const produto = Math.floor(Math.random() * (maxProduto / 2)) + 1;
-                    const multiplicador = multiplicadores[Math.floor(Math.random() * multiplicadores.length)];
                     const valorFinal = produto * multiplicador;
                     
-                    pesoDosTresPrimeiros += produto; // **NOVO**: Acumula o peso
+                    pesoDosTresPrimeiros += produto;
                     totalAcumulado += valorFinal;
-                    produtos.push({ produto, multiplicador, peixe: peixes[i], valorFinal });
+                    produtos.push({ produto, multiplicador, peixe: peixeAtual, valorFinal });
                 }
 
                 if (produtos.length < 3) {
-                    continue; // Tenta novamente se não conseguiu gerar os 3 primeiros itens
+                    continue;
                 }
 
                 const valorRestante = somatorio - totalAcumulado;
@@ -142,21 +182,24 @@
                 }
 
                 let solucaoEncontrada = false;
-                shuffle(multiplicadores);
-                for (const ultimoMultiplicador of multiplicadores) {
+                
+                const ultimoPeixe = peixes[4];
+                const indiceOriginalUltimo = peixesOriginais.indexOf(ultimoPeixe);
+
+                if (indiceOriginalUltimo < multiplicadores.length) {
+                    const ultimoMultiplicador = multiplicadores[indiceOriginalUltimo];
+
                     if (valorRestante % ultimoMultiplicador === 0) {
                         const ultimoProduto = valorRestante / ultimoMultiplicador;
 
-                        // **NOVA REGRA**: Verifica se o peso do último item é válido
                         if (ultimoProduto <= pesoDosTresPrimeiros) {
                             produtos.push({
                                 produto: ultimoProduto,
                                 multiplicador: ultimoMultiplicador,
                                 valorFinal: valorRestante,
-                                peixe: peixes[4]
+                                peixe: ultimoPeixe
                             });
                             solucaoEncontrada = true;
-                            break; 
                         }
                     }
                 }
@@ -192,18 +235,34 @@
         }
 
         function criarTabela() {
+            // **ALTERAÇÃO AQUI**
+            const formatarMoeda = (num) => "R$ " + num.toFixed(2).replace('.',',');
             const inputs = document.querySelectorAll('.valor-mensal');
             let somaMensal = 0;
-            
+
+            // Loop para atualizar os rótulos e calcular a soma total
             inputs.forEach(input => {
-                const valor = input.value.replace(',', '.') || '0';
-                somaMensal += parseFloat(valor);
+                const label = input.parentElement.querySelector('label');
+                // Pega o nome base do mês (ex: "Janeiro") para evitar acúmulo de texto
+                const mesNomeBase = label.textContent.split(':')[0];
+                
+                const valorString = input.value.replace(',', '.') || '0';
+                const valorNumerico = parseFloat(valorString);
+                somaMensal += valorNumerico;
+
+                // Se houver valor no input, calcula a produção e atualiza o label
+                if (valorNumerico > 0) {
+                    const producaoMensal = valorNumerico / 0.015;
+                    // Atualiza o texto do rótulo com o valor da produção mensal
+                    label.innerHTML = `${mesNomeBase}: <span>(${formatarMoeda(producaoMensal)})</span>`;
+                } else {
+                    // Se não houver valor, reseta o rótulo para o original
+                    label.innerHTML = `${mesNomeBase}:`;
+                }
             });
 
             const somatorioDecimal = somaMensal / 0.015;
             const somatorioInteiro = Math.round(somatorioDecimal);
-
-            const formatarMoeda = (num) => "R$ " + num.toFixed(2).replace('.',',');
 
             if (somatorioInteiro > 100 && somatorioInteiro < 800000) {
                 const produtos = gerarProdutos(somatorioInteiro);
@@ -214,7 +273,11 @@
                 produtos.forEach(produto => {
                     let row = tabela.insertRow();
                     row.insertCell(0).innerHTML = produto.produto + " kg";
-                    row.insertCell(1).innerHTML = produto.peixe;
+
+                    const nomePeixe = produto.peixe;
+                    const nomePeixeHtml = nomePeixe.replace(/'/g, "\\'");
+                    row.insertCell(1).innerHTML = `${nomePeixe} <button class="btn-copiar" title="Copiar nome" onclick="copiarNome('${nomePeixeHtml}')">Copiar</button>`;
+                    
                     row.insertCell(2).innerHTML = formatarMoeda(produto.multiplicador);
                     row.insertCell(3).innerHTML = formatarMoeda(produto.valorFinal);
                     totalDaTabela += produto.valorFinal;
@@ -223,7 +286,7 @@
                 document.getElementById("total").innerText = "Total da Produção: " + formatarMoeda(totalDaTabela);
 
             } else {
-                alert("O valor total calculado (" + formatarMoeda(somatorioInteiro) + ") está fora do intervalo válido (entre R$ 100 e R$ 800.000). Por favor, ajuste os valores mensais.");
+                alert("O valor total calculado (" + formatarMoeda(somaMensal) + ") está fora do intervalo válido (entre R$ 100 e R$ 800.000). Por favor, ajuste os valores mensais.");
                 document.getElementById("tabela-produtos").innerHTML = "";
                 document.getElementById("total").innerText = "Total: ";
             }
