@@ -106,6 +106,8 @@
     <div class="container">
         <h1>🐟 Cálculo Reverso de Produção Anual 📝</h1>
         <p>Digite os valores mensais. O peso (KG) na tabela será um número inteiro.</p>
+        <button class="btn-copiar" title="Copiar nome"onclick="copiarNome('18')">Gerar dias (18)</button>
+        <button class="btn-copiar" title="Copiar nome"onclick="copiarNome('19')">Gerar dias (19)</button>
         
         <div id="entradas-mensais" class="meses-grid">
             </div>
@@ -267,18 +269,19 @@
             if (somatorioInteiro > 100 && somatorioInteiro < 800000) {
                 const produtos = gerarProdutos(somatorioInteiro);
                 let tabela = document.getElementById("tabela-produtos");
-                tabela.innerHTML = "<tr><th>🎣 Unidade(KG) </th><th>🐠 Peixe </th><th>💲 Valor/KG </th><th>🗒️ Total Parcial </th></tr>";
+                tabela.innerHTML = "<tr><th>🐠 Peixe</th><th>🎣 Unidade(KG)</th><th>💲 Valor/KG </th><th>🗒️ Total Parcial </th></tr>";
                 
                 let totalDaTabela = 0;
                 produtos.forEach(produto => {
                     let row = tabela.insertRow();
-                    row.insertCell(0).innerHTML = produto.produto + " kg";
-
+                    const quantidadePeixe = produto.produto; 
+                    const valorPeixe = formatarMoeda(produto.multiplicador);			
                     const nomePeixe = produto.peixe;
                     const nomePeixeHtml = nomePeixe.replace(/'/g, "\\'");
-                    row.insertCell(1).innerHTML = `${nomePeixe} <button class="btn-copiar" title="Copiar nome" onclick="copiarNome('${nomePeixeHtml}')">Copiar</button>`;
+                    row.insertCell(0).innerHTML = `${nomePeixe} <button class="btn-copiar" title="Copiar nome" onclick="copiarNome('${nomePeixeHtml}')">Copiar</button>`;
+                    row.insertCell(1).innerHTML = `${quantidadePeixe} <button class="btn-copiar" title="Copiar nome" onclick="copiarNome('${quantidadePeixe}')">Copiar</button>`
                     
-                    row.insertCell(2).innerHTML = formatarMoeda(produto.multiplicador);
+                    row.insertCell(2).innerHTML = `${valorPeixe} <button class="btn-copiar" title="Copiar nome" onclick="copiarNome('${valorPeixe}')">Copiar</button>`;
                     row.insertCell(3).innerHTML = formatarMoeda(produto.valorFinal);
                     totalDaTabela += produto.valorFinal;
                 });
